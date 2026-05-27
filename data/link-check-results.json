@@ -1,0 +1,101 @@
+{
+  "lastChecked": "2026-05-22T04:40:03.728Z",
+  "results": [
+    {
+      "id": "mpgbnx625i0u",
+      "name": "Driver Booster 13.2",
+      "downloadUrl": "https://www.iobit.com/downloadcenter.php?product=driver-booster-free-new&insur=enseo_db",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:04.844Z"
+    },
+    {
+      "id": "mpgbrhw3cz2o",
+      "name": "Unikey",
+      "downloadUrl": "https://www.unikey.org/assets/release/unikey46RC2-230919-win64.zip",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:03.937Z"
+    },
+    {
+      "id": "mpgbudq08c6d",
+      "name": "WinRAR",
+      "downloadUrl": "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-722.exe",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:04.481Z"
+    },
+    {
+      "id": "mpgc9v0lbadf",
+      "name": "Autodesk Revit 2024",
+      "downloadUrl": "https://drive.google.com/file/d/1_R3zEnz38wGa0GA019062myZuQAWGFcx/view?usp=sharing",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:04.305Z"
+    },
+    {
+      "id": "mpgcd50po32q",
+      "name": "Autodesk AutoCAD 2022",
+      "downloadUrl": "https://drive.google.com/file/d/1w7LDs6f3ZA9-aqDC2v527TpLt4rrACnN/view?usp=sharing",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:04.265Z"
+    },
+    {
+      "id": "mpgchepo2eur",
+      "name": "Office 2021",
+      "downloadUrl": "https://drive.google.com/drive/folders/14jL9u-kCON-qd00mfaga18_kPiiPxqi1?usp=drive_link",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:05.864Z"
+    },
+    {
+      "id": "mpgd8kmvx97s",
+      "name": "Google Chrome",
+      "downloadUrl": "https://www.google.com/intl/vi_vn/chrome/",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:04.996Z"
+    },
+    {
+      "id": "mpgf6mthew1e",
+      "name": "Your Uninstaller",
+      "downloadUrl": "https://fa.getpedia.net/data?q=5UjNwITM2IzM5IDMzUTM5MjN8BTN3YDflhXZuAXd0V2c1l3LwIzL3AzLzEDMy8Cdm92UvEGdhR0L",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:04.995Z"
+    },
+    {
+      "id": "mpgf96gpsebx",
+      "name": "UltraViewer",
+      "downloadUrl": "https://fa.getpedia.net/data?q==IjN2QjN3UjN1IDNwMTNxkzM2wHM3cjNxEDflhXZuQjMx0iNtYTLwVHdlNXLyV2dllmVhJHdsV1LxIzL4AzL1IDMy8SZslmZvEGdhR2L",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:05.083Z"
+    },
+    {
+      "id": "mpgfcdvxsz24",
+      "name": "Foxit PDF Reader",
+      "downloadUrl": "https://fa.getpedia.net/data?q=2gTM4UDN5cDN4QDMzUTM5MjN8VDM2kDflhXZuQjN41SbvJHUtAXd0V2Ut4EMxwULxEjNyAjMyVGZhVmUGREU0lGevZ0L4IzL0AzL2IDMy8SZslmZvEGdhR2L",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:04.957Z"
+    },
+    {
+      "id": "mpgfeg6jm94r",
+      "name": "DeltaTIP 3.5",
+      "downloadUrl": "https://fa.getpedia.net/data?q=0kTM2MjMzgDO3MDMzUTM5MjN8RTO0ATM8VGel5SZk92Qp5WVwVHdlNFcpR1LwEzL2AzL3EDMy8SZslmZvEGdhR2L",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:05.935Z"
+    },
+    {
+      "id": "mpgfkzrabdcv",
+      "name": "Clover 3.5",
+      "downloadUrl": "https://www.snapfiles.com/directdl/setup_clover3.5.4.exe",
+      "status": "ok",
+      "statusCode": 200,
+      "checkedAt": "2026-05-22T04:40:06.704Z"
+    }
+  ]
+}

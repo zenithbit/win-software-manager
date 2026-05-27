@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(head -30)",
+      "PowerShell($r1 = Invoke-WebRequest -Uri \"http://localhost:3000\" -UseBasicParsing; $r2 = Invoke-WebRequest -Uri \"http://localhost:3000/admin\" -UseBasicParsing; $r3 = Invoke-WebRequest -Uri \"http://localhost:3000/api/software\" -UseBasicParsing; \"/ => $\\($r1.StatusCode\\)\"; \"/admin => $\\($r2.StatusCode\\)\"; \"/api/software => $\\($r3.StatusCode\\)\"; \\($r3.Content | ConvertFrom-Json\\).Count; \"items in JSON\")",
+      "PowerShell($html = \\(Invoke-WebRequest -Uri \"http://localhost:3000/admin\" -UseBasicParsing\\).Content; if \\($html -match \"ADMIN\"\\) { \"OK: Admin badge\" }; if \\($html -match \"Thêm phần mềm\"\\) { \"OK: Add button\" }; if \\($html -match \"AdminDashboard\"\\) { \"OK: Component rendered\" }; if \\($html -match \"Quản lý danh sách\"\\) { \"OK: Subtitle\" })",
+      "PowerShell(Start-Sleep -Seconds 5; Get-Content \"$env:TEMP\\\\nextdev.log\" -Tail 12)",
+      "PowerShell(Start-Sleep -Seconds 3; Get-Content \"$env:TEMP\\\\nextdev.log\" -Tail 5)",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:3000\" -UseBasicParsing; \"Status: $\\($r.StatusCode\\)\"; if \\($r.Content -match \"Chọn tất cả\"\\) { \"OK: Select all button\" }; if \\($r.Content -match \"BulkDownloadModal\"\\) { \"OK: Bulk modal\" }; if \\($r.Content -match \"SelectionBar\"\\) { \"OK: Selection bar\" })",
+      "PowerShell(Start-Sleep -Seconds 6; Get-Content \"$env:TEMP\\\\nextdev.log\" -Tail 8)",
+      "Bash(cmd.exe /c \"node_modules\\\\.bin\\\\next.cmd build 2>&1\")",
+      "Bash(cmd.exe /c \"node node_modules\\\\next\\\\dist\\\\bin\\\\next build 2>&1\")",
+      "Bash(node node_modules/next/dist/bin/next.js build)",
+      "Bash(node node_modules/next/dist/bin/next build)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\({tailwindcss:p.dependencies?.tailwindcss||p.devDependencies?.tailwindcss, next:p.dependencies?.next, react:p.dependencies?.react},null,2\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/tailwindcss/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const css=fs.readFileSync\\('.next/static/chunks/0.9t2b6h683_d.css','utf8'\\); const darkParts=css.match\\(/prefers-color-scheme[^}]*/g\\); console.log\\('Media query dark:', darkParts ? darkParts.slice\\(0,3\\) : 'NONE'\\); const classParts=css.match\\(/\\\\.dark[^{,\\\\s]+[^}]*dark[^}]*/g\\); console.log\\('Class dark sample:', classParts ? classParts[0].slice\\(0,200\\) : 'NONE'\\)\")",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

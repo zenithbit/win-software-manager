@@ -1,0 +1,203 @@
+[
+  {
+    "id": "mpgbnx625i0u",
+    "name": "Driver Booster 13.2",
+    "description": "Driver Booster 13 by IObit is an automated utility software designed to scan, update, and fix device drivers on Windows systems. It simplifies system maintenance by checking a massive database of certified drivers to keep hardware functioning properly and securely.",
+    "downloadUrl": "https://www.iobit.com/downloadcenter.php?product=driver-booster-free-new&insur=enseo_db",
+    "category": "Utilities",
+    "icon": "https://img.icons8.com/?size=100&id=xuq8ELf0L6J0&format=png&color=000000",
+    "tags": [
+      "driver",
+      "update",
+      "utility",
+      "system",
+      "iobit"
+    ]
+  },
+  {
+    "id": "mpgbrhw3cz2o",
+    "name": "Unikey",
+    "description": "UniKey là chương trình gõ tiếng Việt phổ biến nhất trên Windows. Phần mềm hỗ trợ nhiều bảng mã (Unicode, TCVN3, VNI...) và kiểu gõ thông dụng (Telex, VNI), hoạt động nhẹ nhàng, ổn định và hoàn toàn miễn phí.",
+    "downloadUrl": "https://www.unikey.org/assets/release/unikey46RC2-230919-win64.zip",
+    "category": "Utilities",
+    "icon": "https://img.icons8.com/?size=160&id=iUpKmho8q5LY&format=png",
+    "tags": [
+      "unikey",
+      "go tieng viet",
+      "keyboard",
+      "vietnamese",
+      "utility"
+    ]
+  },
+  {
+    "id": "mpgbudq08c6d",
+    "name": "WinRAR",
+    "description": "WinRAR là một trong những phần mềm nén và giải nén dữ liệu phổ biến nhất hiện nay. Phần mềm hỗ trợ tạo và giải nén các định dạng file lưu trữ mạnh mẽ như RAR, ZIP, cũng như giải nén hàng loạt định dạng khác (7Z, ISO, TAR...), giúp giảm dung lượng file và bảo mật dữ liệu an toàn.",
+    "downloadUrl": "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-722.exe",
+    "category": "Utilities",
+    "icon": "https://img.icons8.com/?size=96&id=13447&format=png",
+    "tags": [
+      "winrar",
+      "rar",
+      "zip",
+      "extract",
+      "compress",
+      "utility"
+    ]
+  },
+  {
+    "id": "mpgc9v0lbadf",
+    "name": "Autodesk Revit 2024",
+    "description": "Autodesk Revit là phần mềm hàng đầu dành cho thiết kế xây dựng và mô hình hóa thông tin công trình (BIM). Phần mềm hỗ trợ các kiến trúc sư, kỹ sư kết cấu và kỹ sư cơ điện (MEP) tạo lập mô hình 3D chi tiết, phối hợp tài liệu thiết kế và tối ưu hóa quy trình thi công một cách đồng bộ, chính xác.",
+    "downloadUrl": "https://drive.google.com/file/d/1_R3zEnz38wGa0GA019062myZuQAWGFcx/view?usp=sharing",
+    "category": "Architect",
+    "icon": "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/autodesk-revit-icon.png",
+    "tags": [
+      "revit",
+      "autodesk",
+      "bim",
+      "3d design",
+      "architect",
+      "engineering"
+    ]
+  },
+  {
+    "id": "mpgcd50po32q",
+    "name": "Autodesk AutoCAD 2022",
+    "description": "Autodesk AutoCAD là phần mềm thiết kế hỗ trợ máy tính (CAD) chuyên nghiệp hàng đầu thế giới. Phần mềm cho phép các kiến trúc sư, kỹ sư và chuyên viên kỹ thuật tạo lập, hiệu chỉnh bản vẽ kỹ thuật 2D và mô hình 3D với độ chính xác cực cao, tối ưu hóa hiệu suất làm việc nhờ các bộ công cụ chuyên ngành tích hợp.",
+    "downloadUrl": "https://drive.google.com/file/d/1w7LDs6f3ZA9-aqDC2v527TpLt4rrACnN/view?usp=sharing",
+    "category": "Architect",
+    "icon": "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/autocad-icon.png",
+    "tags": [
+      "autocad",
+      "cad",
+      "autodesk",
+      "2d design",
+      "3d modeling",
+      "engineering"
+    ]
+  },
+  {
+    "id": "mpgchepo2eur",
+    "name": "Office 2021",
+    "description": "Microsoft Office 2021 là bộ ứng dụng văn phòng trả phí một lần phổ biến nhất hiện nay, bao gồm các công cụ cốt lõi như Word, Excel, PowerPoint, Outlook và OneNote. Phiên bản này cung cấp đầy đủ tính năng biên soạn tài liệu, xử lý dữ liệu, thiết kế bài thuyết trình chuyên nghiệp và làm việc ngoại tuyến ổn định mà không cần đăng ký thuê bao hàng tháng.",
+    "downloadUrl": "https://drive.google.com/drive/folders/14jL9u-kCON-qd00mfaga18_kPiiPxqi1?usp=drive_link",
+    "category": "Office",
+    "icon": "https://img.icons8.com/?size=100&id=6kZdxe7t8OL1&format=png&color=000000",
+    "tags": [
+      "office",
+      "microsoft",
+      "word",
+      "excel",
+      "powerpoint",
+      "office 2021"
+    ]
+  },
+  {
+    "id": "mpgd8kmvx97s",
+    "name": "Google Chrome",
+    "description": "Google Chrome là trình duyệt web tốc độ cao, an toàn và phổ biến nhất hiện nay do Google phát triển. Trình duyệt hỗ trợ kho tiện ích mở rộng (extensions) khổng lồ, khả năng đồng bộ hóa dữ liệu mượt mà giữa nhiều thiết bị và tích hợp sẵn các công cụ bảo mật, dịch thuật cùng hệ sinh thái dịch vụ của Google.",
+    "downloadUrl": "https://www.google.com/intl/vi_vn/chrome/",
+    "category": "Browsers",
+    "icon": "https://img.icons8.com/?size=100&id=63785&format=png&color=000000",
+    "tags": [
+      "chrome",
+      "google",
+      "browser",
+      "web",
+      "internet"
+    ]
+  },
+  {
+    "id": "mpgf6mthew1e",
+    "name": "Your Uninstaller",
+    "description": "Phần mềm gỡ cài đặt mạnh mẽ cho Windows, giúp dọn dẹp sạch sẽ các tệp tin rác, registry thừa và các dấu vết còn sót lại của ứng dụng mà trình gỡ cài đặt mặc định của hệ điều hành bỏ qua.",
+    "downloadUrl": "https://fa.getpedia.net/data?q=5UjNwITM2IzM5IDMzUTM5MjN8BTN3YDflhXZuAXd0V2c1l3LwIzL3AzLzEDMy8Cdm92UvEGdhR0L",
+    "category": "Utilities",
+    "icon": "https://img.icons8.com/?size=100&id=RME3LYMLnBsm&format=png&color=000000",
+    "tags": [
+      "uninstaller",
+      "gỡ cài đặt",
+      "dọn dẹp hệ thống",
+      "utilities",
+      "windows tool"
+    ]
+  },
+  {
+    "id": "mpgf96gpsebx",
+    "name": "UltraViewer",
+    "description": "Phần mềm điều khiển máy tính từ xa an toàn và bảo mật, hỗ trợ kết nối, chăm sóc khách hàng và hỗ trợ kỹ thuật từ xa với tốc độ nhanh chóng và giao diện thân thiện.",
+    "downloadUrl": "https://fa.getpedia.net/data?q==IjN2QjN3UjN1IDNwMTNxkzM2wHM3cjNxEDflhXZuQjMx0iNtYTLwVHdlNXLyV2dllmVhJHdsV1LxIzL4AzL1IDMy8SZslmZvEGdhR2L",
+    "category": "Utilities",
+    "icon": "https://img.icons8.com/?size=96&id=PP3XvVMWvMWy&format=png",
+    "tags": [
+      "remote desktop",
+      "điều khiển từ xa",
+      "hỗ trợ máy tính",
+      "ultraviewer",
+      "utilities"
+    ],
+    "wingetId": "UltraViewer.UltraViewer"
+  },
+  {
+    "id": "mpgfcdvxsz24",
+    "name": "Foxit PDF Reader",
+    "description": "Phần mềm đọc, tạo, chỉnh sửa cơ bản và ký tệp PDF gọn nhẹ với hiệu suất cao. Hỗ trợ đầy đủ các tính năng xem tài liệu theo tab, ghi chú, bảo mật và chia sẻ file PDF một cách dễ dàng.",
+    "downloadUrl": "https://fa.getpedia.net/data?q=2gTM4UDN5cDN4QDMzUTM5MjN8VDM2kDflhXZuQjN41SbvJHUtAXd0V2Ut4EMxwULxEjNyAjMyVGZhVmUGREU0lGevZ0L4IzL0AzL2IDMy8SZslmZvEGdhR2L",
+    "category": "Utilities",
+    "icon": "https://img.icons8.com/?size=100&id=bxiJgqowYKhT&format=png&color=000000",
+    "tags": [
+      "pdf reader",
+      "đọc file pdf",
+      "xem tài liệu",
+      "foxit reader",
+      "office tools"
+    ]
+  },
+  {
+    "id": "mpgfeg6jm94r",
+    "name": "DeltaTIP 3.5",
+    "description": "Phần mềm chuyên dụng hỗ trợ tính toán, thiết kế và tối ưu hóa hệ thống chống sét tiếp địa cho các công trình xây dựng. Giúp các kỹ sư và kiến trúc sư lập cấu hình hệ thống bảo vệ an toàn theo các tiêu chuẩn kỹ thuật hiện hành.",
+    "downloadUrl": "https://fa.getpedia.net/data?q=0kTM2MjMzgDO3MDMzUTM5MjN8RTO0ATM8VGel5SZk92Qp5WVwVHdlNFcpR1LwEzL2AzL3EDMy8SZslmZvEGdhR2L",
+    "category": "Architect",
+    "icon": "https://img.icons8.com/?size=100&id=s1yVU5nTeeQk&format=png&color=000000",
+    "tags": [
+      "chống sét",
+      "tiếp địa",
+      "architect",
+      "thiết kế điện nước",
+      "xây dựng",
+      "deltatip"
+    ]
+  },
+  {
+    "id": "mpgfkzrabdcv",
+    "name": "Clover 3.5",
+    "description": "Tiện ích mở rộng cho Windows Explorer, giúp tích hợp tính năng quản lý theo tab và đánh dấu trang (bookmark) giống như trình duyệt Google Chrome, mang lại trải nghiệm duyệt thư mục nhanh chóng và tiện lợi.",
+    "downloadUrl": "https://www.snapfiles.com/directdl/setup_clover3.5.4.exe",
+    "category": "System",
+    "icon": "https://img.icons8.com/?size=100&id=0O9sAXLXDBU5&format=png&color=000000",
+    "tags": [
+      "windows explorer",
+      "tab explorer",
+      "clover",
+      "tiện ích hệ thống",
+      "system tool"
+    ]
+  },
+  {
+    "id": "mpghcfgwjmca",
+    "name": "Hard Disk Sentinel 6.40",
+    "description": "Phần mềm kiểm tra, giám sát và chuẩn đoán sức khỏe ổ cứng (HDD/SSD) chuyên nghiệp. Hỗ trợ hiển thị nhiệt độ, trạng thái S.M.A.R.T, tốc độ truyền tải và cảnh báo sớm các nguy cơ hỏng hóc để bảo vệ dữ liệu an toàn.",
+    "downloadUrl": "https://www.harddisksentinel.com/hdsentinel_setup.zip",
+    "category": "Utilities",
+    "icon": "https://img.icons8.com/?size=100&id=64109&format=png&color=000000",
+    "tags": [
+      "ổ cứng",
+      "kiểm tra ssd",
+      "sức khỏe ổ cứng",
+      "hdd sentinel",
+      "utilities"
+    ]
+  }
+]
