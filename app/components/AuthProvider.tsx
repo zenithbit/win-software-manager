@@ -100,7 +100,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (kickedRef.current) return;
       try {
         const res = await fetch("/api/me");
-        if (!res.ok) return;
+        if (!res.ok) {
+          if (res.status === 401) {
+            kickedRef.current = true;
+            setKicked(true);
+            stopPolling();
+          }
+          return;
+        }
         const data = await res.json();
         const fetched = data?.user as (AuthUser & { isLogin?: boolean }) | null;
         if (fetched && fetched.isLogin === false) {
