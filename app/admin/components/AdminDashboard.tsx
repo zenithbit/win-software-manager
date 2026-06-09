@@ -644,6 +644,7 @@ function UserManagementPanel({
   const [duration, setDuration] = useState<UserDurationLocal>("forever");
   const [editingQuotaId, setEditingQuotaId] = useState<string | null>(null);
   const [quotaInput, setQuotaInput] = useState("");
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<{ id: string; username: string } | null>(null);
 
   const handleCopy = () => {
     if (!newCreds) return;
@@ -671,6 +672,31 @@ function UserManagementPanel({
   const inputCls = "rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 transition";
 
   return (
+    <>
+      {confirmDeleteUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">Xóa tài khoản?</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
+              Tài khoản <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{confirmDeleteUser.username}</span> sẽ bị xóa vĩnh viễn.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setConfirmDeleteUser(null)}
+                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => { onDeleteUser(confirmDeleteUser.id, confirmDeleteUser.username); setConfirmDeleteUser(null); }}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition"
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3">
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mr-auto">
@@ -791,7 +817,7 @@ function UserManagementPanel({
                     Đổi role
                   </button>
                   <button
-                    onClick={() => onDeleteUser(u.id, u.username)}
+                    onClick={() => setConfirmDeleteUser({ id: u.id, username: u.username })}
                     title="Xóa tài khoản"
                     className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition text-sm"
                   >
@@ -837,6 +863,7 @@ function UserManagementPanel({
         </div>
       )}
     </div>
+    </>
   );
 }
 
@@ -1826,9 +1853,7 @@ export default function AdminDashboard() {
             </div>
           </>)}
 
-          <p className="text-xs text-slate-400 dark:text-slate-500 text-center pb-4">
-            Dữ liệu được lưu trong <code className="bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">data/software-db.json</code>
-          </p>
+
         </div>
       </div>
     </>
