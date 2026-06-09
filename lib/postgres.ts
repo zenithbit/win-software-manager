@@ -81,6 +81,22 @@ export async function initDb() {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS account_requests (
+      id             TEXT PRIMARY KEY,
+      name           TEXT NOT NULL,
+      ip_address     TEXT NOT NULL UNIQUE,
+      location       TEXT,
+      duration       TEXT NOT NULL DEFAULT '30d',
+      status         TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined')),
+      decline_reason TEXT,
+      gen_username   TEXT,
+      gen_password   TEXT,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      resolved_at    TIMESTAMPTZ
+    )
+  `;
+
   // Seed default categories on first run
   const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM categories`;
   if (count === 0) {

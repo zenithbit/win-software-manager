@@ -21,6 +21,7 @@ export async function GET(req: Request) {
       role: user.role,
       maxDownloads: user.maxDownloads,
       downloadCount: user.downloadCount,
+      isLogin: user.isLogin,
     },
   });
 }

@@ -9,6 +9,7 @@ import type { Suggestion } from "@/lib/suggestionsDb";
 import type { ChangelogEntry } from "@/lib/changelogDb";
 import type { SafeUser, UserRole } from "@/lib/usersDb";
 import type { DownloadLogEntry } from "@/lib/downloadLogDb";
+import type { AccountRequest } from "@/lib/accountRequestsDb";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -391,6 +392,228 @@ const DURATION_OPTIONS = [
 ] as const;
 
 type UserDurationLocal = "1d" | "3d" | "30d" | "forever";
+
+// ─── Account Requests Panel ───────────────────────────────────────────────────
+
+const DECLINE_REASONS = [
+  "Thông tin yêu cầu không đầy đủ hoặc không hợp lệ.",
+  "IP của bạn bị liệt vào danh sách hạn chế.",
+  "Hệ thống hiện không nhận thêm tài khoản mới.",
+  "Tên hoặc thông tin cá nhân không phù hợp.",
+  "Yêu cầu bị từ chối vì lý do bảo mật.",
+  "Đã có tài khoản được cấp với thông tin này.",
+];
+
+const DURATION_LABEL_MAP: Record<string, string> = {
+  "1d": "1 ngày", "3d": "3 ngày", "30d": "30 ngày", "forever": "Vĩnh viễn",
+};
+
+function DeclineModal({
+  onConfirm,
+  onCancel,
+  loading,
+}: {
+  onConfirm: (reason: string) => void;
+  onCancel: () => void;
+  loading: boolean;
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [custom, setCustom] = useState("");
+  const reason = selected === "__custom__" ? custom.trim() : selected;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-white">Chọn lý do từ chối</h3>
+          <button type="button" onClick={onCancel} className="text-slate-500 hover:text-white transition">✕</button>
+        </div>
+        <div className="space-y-1.5">
+          {DECLINE_REASONS.map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setSelected(r)}
+              className={`w-full text-left px-3 py-2 rounded-xl text-xs transition ${
+                selected === r
+                  ? "bg-red-700 text-white border border-red-500"
+                  : "bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setSelected("__custom__")}
+            className={`w-full text-left px-3 py-2 rounded-xl text-xs transition ${
+              selected === "__custom__"
+                ? "bg-red-700 text-white border border-red-500"
+                : "bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500"
+            }`}
+          >
+            Lý do khác...
+          </button>
+          {selected === "__custom__" && (
+            <textarea
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              placeholder="Nhập lý do từ chối..."
+              autoFocus
+              rows={2}
+              className="w-full rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-slate-400 resize-none"
+            />
+          )}
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 py-2 rounded-xl border border-slate-600 text-slate-300 text-xs font-semibold hover:bg-slate-800 transition"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            onClick={() => reason && onConfirm(reason)}
+            disabled={!reason || loading}
+            className="flex-1 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {loading ? "Đang xử lý..." : "Xác nhận từ chối"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AccountRequestsPanel({
+  requests,
+  onApprove,
+  onDecline,
+  onRefresh,
+}: {
+  requests: AccountRequest[];
+  onApprove: (id: string) => Promise<void>;
+  onDecline: (id: string, reason: string) => Promise<void>;
+  onRefresh: () => void;
+}) {
+  const [declineTarget, setDeclineTarget] = useState<string | null>(null);
+  const [approving, setApproving] = useState<string | null>(null);
+  const [declining, setDeclining] = useState(false);
+
+  const pending = requests.filter((r) => r.status === "pending");
+  const resolved = requests.filter((r) => r.status !== "pending");
+
+  const handleApprove = async (id: string) => {
+    setApproving(id);
+    try { await onApprove(id); } finally { setApproving(null); }
+  };
+
+  const handleDeclineConfirm = async (reason: string) => {
+    if (!declineTarget) return;
+    setDeclining(true);
+    try { await onDecline(declineTarget, reason); } finally {
+      setDeclining(false);
+      setDeclineTarget(null);
+    }
+  };
+
+  const statusBadge = (status: AccountRequest["status"]) => {
+    if (status === "pending") return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Chờ duyệt</span>;
+    if (status === "approved") return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">Đã duyệt</span>;
+    return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400">Từ chối</span>;
+  };
+
+  return (
+    <>
+      {declineTarget && (
+        <DeclineModal
+          onConfirm={handleDeclineConfirm}
+          onCancel={() => setDeclineTarget(null)}
+          loading={declining}
+        />
+      )}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+            <span>🔑</span>
+            Yêu cầu cấp tài khoản
+            {pending.length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-amber-400 text-slate-900 text-[11px] font-bold">
+                {pending.length}
+              </span>
+            )}
+            {requests.length > 0 && (
+              <span className="text-slate-400 font-normal text-xs">({requests.length} tổng)</span>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            ↻ Làm mới
+          </button>
+        </div>
+
+        {requests.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-slate-400">Chưa có yêu cầu nào.</div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            {[...pending, ...resolved].map((req) => (
+              <div key={req.id} className="px-4 py-3 flex items-start gap-3">
+                <div className="flex-1 min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{req.name}</span>
+                    {statusBadge(req.status)}
+                    <span className="text-[10px] text-slate-400 ml-auto">
+                      {new Date(req.createdAt).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                    <span title="Địa chỉ IP">📍 {req.ipAddress}</span>
+                    {req.location && <span>{req.location}</span>}
+                    <span>⏱ {DURATION_LABEL_MAP[req.duration] ?? req.duration}</span>
+                  </div>
+                  {req.status === "approved" && req.genUsername && (
+                    <div className="text-xs text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                      ✓ {req.genUsername}
+                    </div>
+                  )}
+                  {req.status === "declined" && req.declineReason && (
+                    <div className="text-xs text-red-400 mt-0.5 italic">
+                      ✕ {req.declineReason}
+                    </div>
+                  )}
+                </div>
+                {req.status === "pending" && (
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleApprove(req.id)}
+                      disabled={approving === req.id}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-500 disabled:opacity-50 transition whitespace-nowrap"
+                    >
+                      {approving === req.id ? "..." : "✓ Duyệt"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeclineTarget(req.id)}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 text-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition whitespace-nowrap"
+                    >
+                      ✕ Từ chối
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
 
 function expiryBadge(expiredAt: string | null): { text: string; cls: string } {
   if (!expiredAt) return { text: "Vĩnh viễn", cls: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400" };
@@ -783,6 +1006,7 @@ export default function AdminDashboard() {
   const [userCreating, setUserCreating] = useState(false);
   const [downloadLogs, setDownloadLogs] = useState<DownloadLogEntry[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
+  const [accountRequests, setAccountRequests] = useState<AccountRequest[]>([]);
 
   useEffect(() => {
     if (!toast) return;
@@ -842,6 +1066,42 @@ export default function AdminDashboard() {
       .then(setDownloadLogs)
       .catch(() => {})
       .finally(() => setLogsLoading(false));
+  }, []);
+
+  const fetchAccountRequests = useCallback(() => {
+    fetch("/api/account-requests")
+      .then((r) => r.json())
+      .then(setAccountRequests)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { fetchAccountRequests(); }, [fetchAccountRequests]);
+
+  const handleApproveRequest = useCallback(async (id: string) => {
+    const res = await fetch(`/api/account-requests/${id}/approve`, { method: "POST" });
+    if (res.ok) {
+      const updated = await res.json();
+      setAccountRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
+      setToast({ msg: "Đã duyệt và cấp tài khoản thành công!", ok: true });
+    } else {
+      const { error } = await res.json();
+      setToast({ msg: error || "Không thể duyệt yêu cầu.", ok: false });
+    }
+  }, []);
+
+  const handleDeclineRequest = useCallback(async (id: string, reason: string) => {
+    const res = await fetch(`/api/account-requests/${id}/decline`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setAccountRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
+      setToast({ msg: "Đã từ chối yêu cầu.", ok: true });
+    } else {
+      setToast({ msg: "Không thể từ chối yêu cầu.", ok: false });
+    }
   }, []);
 
   const handleCreateUser = useCallback(async (duration: UserDurationLocal): Promise<{ username: string; password: string } | null> => {
@@ -1250,6 +1510,14 @@ export default function AdminDashboard() {
               </ul>
             </div>
           )}
+
+          {/* Account Requests */}
+          <AccountRequestsPanel
+            requests={accountRequests}
+            onApprove={handleApproveRequest}
+            onDecline={handleDeclineRequest}
+            onRefresh={fetchAccountRequests}
+          />
 
           {/* User Management */}
           <UserManagementPanel
