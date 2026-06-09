@@ -1095,7 +1095,7 @@ export default function AdminDashboard() {
       Notification.requestPermission();
     }
     fetchAccountRequests();
-    const interval = setInterval(fetchAccountRequests, 30_000);
+    const interval = setInterval(fetchAccountRequests, 15_000);
     return () => clearInterval(interval);
   }, [fetchAccountRequests]);
 
