@@ -1006,6 +1006,7 @@ export default function AdminDashboard() {
   const [logsLoading, setLogsLoading] = useState(true);
   const [accountRequests, setAccountRequests] = useState<AccountRequest[]>([]);
   const [activeTab, setActiveTab] = useState<"software" | "categories" | "accounts" | "suggestions" | "logs">("software");
+  const prevPendingIdsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -1070,11 +1071,33 @@ export default function AdminDashboard() {
   const fetchAccountRequests = useCallback(() => {
     fetch("/api/account-requests")
       .then((r) => r.json())
-      .then(setAccountRequests)
+      .then((requests: AccountRequest[]) => {
+        setAccountRequests(requests);
+        const pending = requests.filter((r) => r.status === "pending");
+        if (prevPendingIdsRef.current !== null) {
+          const newOnes = pending.filter((r) => !prevPendingIdsRef.current!.has(r.id));
+          if (newOnes.length > 0 && typeof Notification !== "undefined" && Notification.permission === "granted") {
+            newOnes.forEach((req) => {
+              new Notification("Yêu cầu cấp tài khoản mới", {
+                body: `${req.name} từ ${req.location ?? "không xác định"} đã gửi yêu cầu`,
+                icon: "/logo/win-software-manager.png",
+              });
+            });
+          }
+        }
+        prevPendingIdsRef.current = new Set(pending.map((r) => r.id));
+      })
       .catch(() => {});
   }, []);
 
-  useEffect(() => { fetchAccountRequests(); }, [fetchAccountRequests]);
+  useEffect(() => {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+    fetchAccountRequests();
+    const interval = setInterval(fetchAccountRequests, 30_000);
+    return () => clearInterval(interval);
+  }, [fetchAccountRequests]);
 
   const handleApproveRequest = useCallback(async (id: string) => {
     const res = await fetch(`/api/account-requests/${id}/approve`, { method: "POST" });
