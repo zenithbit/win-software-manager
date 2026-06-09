@@ -69,6 +69,7 @@ export async function initDb() {
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity TIMESTAMPTZ`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS max_downloads INTEGER NOT NULL DEFAULT 0`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS download_count INTEGER NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE software ADD COLUMN IF NOT EXISTS note TEXT`;
   await sql`
     CREATE TABLE IF NOT EXISTS download_log (
       id            TEXT PRIMARY KEY,

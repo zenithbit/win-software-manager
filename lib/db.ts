@@ -11,6 +11,7 @@ function rowToSoftware(row: Record<string, unknown>): Software {
     icon: row.icon as string,
     tags: (row.tags as string[]) ?? [],
     wingetId: (row.winget_id as string) ?? undefined,
+    note: (row.note as string) || undefined,
   };
 }
 
@@ -22,9 +23,9 @@ export async function getAll(): Promise<Software[]> {
 export async function create(data: Omit<Software, "id">): Promise<Software> {
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const rows = await sql`
-    INSERT INTO software (id, name, description, download_url, category, icon, tags, winget_id)
+    INSERT INTO software (id, name, description, download_url, category, icon, tags, winget_id, note)
     VALUES (${id}, ${data.name}, ${data.description}, ${data.downloadUrl},
-            ${data.category}, ${data.icon}, ${data.tags ?? []}, ${data.wingetId ?? null})
+            ${data.category}, ${data.icon}, ${data.tags ?? []}, ${data.wingetId ?? null}, ${data.note ?? null})
     RETURNING *
   `;
   return rowToSoftware(rows[0]);
@@ -43,7 +44,8 @@ export async function update(id: string, data: Partial<Omit<Software, "id">>): P
         category     = ${merged.category},
         icon         = ${merged.icon},
         tags         = ${merged.tags ?? []},
-        winget_id    = ${merged.wingetId ?? null}
+        winget_id    = ${merged.wingetId ?? null},
+        note         = ${merged.note ?? null}
     WHERE id = ${id}
     RETURNING *
   `;

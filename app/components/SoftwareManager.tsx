@@ -3,9 +3,9 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { type Software } from "@/app/data/software";
-import { useTheme } from "./ThemeProvider";
 import { useAuth } from "./AuthProvider";
 import type { SafeUser } from "@/lib/usersDb";
+import type { AccountRequest } from "@/lib/accountRequestsDb";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -142,23 +142,6 @@ function LockIcon() {
   );
 }
 
-function SunIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
-}
-
 // ─── PopularIcon ──────────────────────────────────────────────────────────────
 
 function PopularIcon({ src, alt }: { src: string; alt: string }) {
@@ -184,13 +167,16 @@ interface CardProps {
 function SoftwareCard({ software, selected, installed, quotaExceeded, onToggle, onMark, onUnmark, onDownload }: CardProps) {
   const [hoverBtn, setHoverBtn] = useState(false);
   const [iconError, setIconError] = useState(false);
+  const [showNote, setShowNote] = useState(false);
+
+  const hasNote = !!software.note;
 
   return (
     <div
       role="checkbox"
       aria-checked={selected}
       onClick={() => onToggle(software.id)}
-      className={`group relative flex flex-col rounded-2xl border-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden cursor-pointer select-none ${
+      className={`group relative flex flex-col rounded-2xl border-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer select-none ${
         selected
           ? "border-blue-500 bg-blue-50/40 dark:bg-blue-900/30"
           : installed
@@ -217,11 +203,27 @@ function SoftwareCard({ software, selected, installed, quotaExceeded, onToggle, 
         </div>
       )}
 
+      {/* Note badge — shifts below installed badge when both present */}
+      {hasNote && (
+        <div
+          className={`absolute z-20 right-3 ${installed ? "top-9" : "top-3"}`}
+          onClick={(e) => { e.stopPropagation(); setShowNote((v) => !v); }}
+        >
+          <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm cursor-pointer transition-colors ${
+            showNote
+              ? "bg-amber-500 text-white"
+              : "bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white dark:bg-amber-900/50 dark:text-amber-300 dark:hover:bg-amber-500 dark:hover:text-white"
+          }`}>
+            🔑 Key
+          </span>
+        </div>
+      )}
+
       {/* Body */}
       <div
         className={`flex items-start gap-4 p-5 flex-1 transition-all duration-150 ${
           selected ? "pl-10" : "pl-5 group-hover:pl-10"
-        } ${installed ? "pr-16" : ""}`}
+        } ${installed || hasNote ? "pr-16" : ""}`}
       >
         <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 dark:bg-slate-700 dark:border-slate-600 overflow-hidden">
           {iconError ? (
@@ -240,6 +242,14 @@ function SoftwareCard({ software, selected, installed, quotaExceeded, onToggle, 
           <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">{software.description}</p>
         </div>
       </div>
+
+      {/* Note panel */}
+      {showNote && software.note && (
+        <div className="mx-4 mb-3 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50" onClick={(e) => e.stopPropagation()}>
+          <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-1">🔑 Ghi chú / Key</p>
+          <p className="text-xs text-amber-900 dark:text-amber-200 whitespace-pre-wrap font-mono leading-relaxed">{software.note}</p>
+        </div>
+      )}
 
       {/* Action button */}
       <div className="px-5 pb-5" onClick={(e) => e.stopPropagation()}>
@@ -681,7 +691,21 @@ function expiryBadge(expiredAt: string | null): { text: string; cls: string } {
   return { text: `Còn ${days} ngày`, cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" };
 }
 
+const DECLINE_REASONS_SM = [
+  "Thông tin yêu cầu không đầy đủ hoặc không hợp lệ.",
+  "IP của bạn bị liệt vào danh sách hạn chế.",
+  "Hệ thống hiện không nhận thêm tài khoản mới.",
+  "Tên hoặc thông tin cá nhân không phù hợp.",
+  "Yêu cầu bị từ chối vì lý do bảo mật.",
+  "Đã có tài khoản được cấp với thông tin này.",
+];
+
+const DURATION_LABEL_SM: Record<string, string> = {
+  "1d": "1 ngày", "3d": "3 ngày", "30d": "30 ngày", "forever": "Vĩnh viễn",
+};
+
 function UserManagementModal({ onClose }: { onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<"accounts" | "requests">("accounts");
   const [users, setUsers] = useState<SafeUser[]>([]);
   const [duration, setDuration] = useState<"1d" | "3d" | "30d" | "forever">("forever");
   const [creating, setCreating] = useState(false);
@@ -689,8 +713,14 @@ function UserManagementModal({ onClose }: { onClose: () => void }) {
   const [newCreds, setNewCreds] = useState<{ username: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const [requests, setRequests] = useState<AccountRequest[]>([]);
+  const [approving, setApproving] = useState<string | null>(null);
+  const [declineExpandedId, setDeclineExpandedId] = useState<string | null>(null);
+  const [declining, setDeclining] = useState(false);
+
   useEffect(() => {
     fetch("/api/users").then((r) => r.json()).then(setUsers).catch(() => {});
+    fetch("/api/account-requests").then((r) => r.json()).then(setRequests).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -735,111 +765,237 @@ function UserManagementModal({ onClose }: { onClose: () => void }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleApprove = async (id: string) => {
+    setApproving(id);
+    try {
+      const res = await fetch(`/api/account-requests/${id}/approve`, { method: "POST" });
+      if (res.ok) {
+        const updated = await res.json() as AccountRequest;
+        setRequests((prev) => prev.map((r) => r.id === id ? updated : r));
+        // Also refresh user list since a new user was created
+        fetch("/api/users").then((r) => r.json()).then(setUsers).catch(() => {});
+      }
+    } finally {
+      setApproving(null);
+    }
+  };
+
+  const handleDecline = async (id: string, reason: string) => {
+    setDeclining(true);
+    try {
+      const res = await fetch(`/api/account-requests/${id}/decline`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      if (res.ok) {
+        const updated = await res.json() as AccountRequest;
+        setRequests((prev) => prev.map((r) => r.id === id ? updated : r));
+        setDeclineExpandedId(null);
+      }
+    } finally {
+      setDeclining(false);
+    }
+  };
+
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden" style={{ maxHeight: "88vh" }}>
+
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <img src="/logo/win-software-manager.png" alt="" className="h-7 w-auto object-contain rounded-lg bg-white dark:bg-slate-700 p-0.5" />
-            <div>
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Quản lý tài khoản</h2>
-              <p className="text-xs text-slate-400">{users.length} tài khoản</p>
-            </div>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Quản lý tài khoản</h2>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition text-lg leading-none">✕</button>
         </div>
 
-        {/* Create toolbar */}
-        <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-800/50">
-          <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">Thời hạn:</span>
-          <select
-            value={duration}
-            onChange={(e) => setDuration(e.target.value as typeof duration)}
-            className="flex-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 transition"
-          >
-            {DURATION_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+        {/* Tabs */}
+        <div className="flex border-b border-slate-100 dark:border-slate-800 shrink-0">
           <button
-            onClick={handleCreate}
-            disabled={creating}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-600 text-white text-xs font-semibold hover:bg-slate-700 dark:hover:bg-slate-500 disabled:opacity-50 transition whitespace-nowrap"
+            onClick={() => setActiveTab("accounts")}
+            className={`flex-1 py-2.5 text-xs font-semibold transition ${activeTab === "accounts" ? "text-slate-900 dark:text-slate-100 border-b-2 border-slate-900 dark:border-slate-100" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
           >
-            {creating ? "Đang tạo..." : "+ Tạo tài khoản"}
+            Tài khoản <span className="ml-1 text-slate-400 font-normal">({users.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("requests")}
+            className={`flex-1 py-2.5 text-xs font-semibold transition relative ${activeTab === "requests" ? "text-slate-900 dark:text-slate-100 border-b-2 border-slate-900 dark:border-slate-100" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+          >
+            Yêu cầu cấp quyền
+            {pendingCount > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-slate-900 text-[10px] font-bold leading-none">
+                {pendingCount}
+              </span>
+            )}
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
-          {/* New credentials card */}
-          {newCreds && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800/50 dark:bg-emerald-900/20 p-3.5">
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">✓ Tài khoản mới — lưu lại ngay!</span>
-                <button onClick={() => setNewCreds(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 leading-none text-sm">✕</button>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mb-2.5">
-                <div className="bg-white dark:bg-slate-800 rounded-lg px-3 py-2">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">Username</p>
-                  <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 select-all">{newCreds.username}</p>
-                </div>
-                <div className="bg-white dark:bg-slate-800 rounded-lg px-3 py-2">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">Password</p>
-                  <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 select-all">{newCreds.password}</p>
-                </div>
-              </div>
-              <button onClick={handleCopy} className="w-full text-xs py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition font-medium">
-                {copied ? "✓ Đã sao chép!" : "📋 Sao chép thông tin đăng nhập"}
+        {/* ── Tab: Accounts ── */}
+        {activeTab === "accounts" && (
+          <>
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-800/50">
+              <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">Thời hạn:</span>
+              <select
+                value={duration}
+                onChange={(e) => setDuration(e.target.value as typeof duration)}
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 transition"
+              >
+                {DURATION_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleCreate}
+                disabled={creating}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-600 text-white text-xs font-semibold hover:bg-slate-700 dark:hover:bg-slate-500 disabled:opacity-50 transition whitespace-nowrap"
+              >
+                {creating ? "Đang tạo..." : "+ Tạo tài khoản"}
               </button>
             </div>
-          )}
 
-          {/* User list */}
-          {users.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-8">Chưa có tài khoản nào.</p>
-          ) : (
-            <div className="space-y-2">
-              {users.map((u) => {
-                const expired = u.expiredAt ? new Date(u.expiredAt) < new Date() : false;
-                const badge = expiryBadge(u.expiredAt ?? null);
-                return (
-                <div key={u.id} className={`flex items-center gap-3 rounded-xl border bg-slate-50 dark:bg-slate-800/50 px-3.5 py-2.5 ${expired ? "border-red-200 dark:border-red-900/50" : "border-slate-100 dark:border-slate-800"}`}>
-                  {/* Avatar */}
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 select-none ${expired ? "bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400" : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
-                    {u.username[0].toUpperCase()}
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+              {newCreds && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800/50 dark:bg-emerald-900/20 p-3.5">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">✓ Tài khoản mới — lưu lại ngay!</span>
+                    <button onClick={() => setNewCreds(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 leading-none text-sm">✕</button>
                   </div>
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                      <span className="text-sm font-mono font-semibold text-slate-800 dark:text-slate-100">{u.username}</span>
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${u.role === "admin" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"}`}>
-                        {u.role === "admin" ? "👑 Admin" : "👤 User"}
-                      </span>
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${u.isLogin ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${u.isLogin ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
-                        {u.isLogin ? "Đang online" : "Offline"}
-                      </span>
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${badge.cls}`}>
-                        ⏱ {badge.text}
-                      </span>
+                  <div className="grid grid-cols-2 gap-2 mb-2.5">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">Username</p>
+                      <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 select-all">{newCreds.username}</p>
                     </div>
-                    {u.currentIp && <p className="text-[11px] text-slate-400 font-mono">IP: {u.currentIp}</p>}
+                    <div className="bg-white dark:bg-slate-800 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">Password</p>
+                      <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 select-all">{newCreds.password}</p>
+                    </div>
                   </div>
-                  {/* Kick */}
-                  <button
-                    onClick={() => handleKick(u.id)}
-                    disabled={!u.isLogin || kicking === u.id}
-                    title={u.isLogin ? "Kick — buộc đăng xuất" : "Tài khoản đang offline"}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-30 disabled:cursor-not-allowed transition whitespace-nowrap"
-                  >
-                    {kicking === u.id ? "..." : "⚡ Kick"}
+                  <button onClick={handleCopy} className="w-full text-xs py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition font-medium">
+                    {copied ? "✓ Đã sao chép!" : "📋 Sao chép thông tin đăng nhập"}
                   </button>
                 </div>
-              ); })}
+              )}
+
+              {users.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-8">Chưa có tài khoản nào.</p>
+              ) : (
+                <div className="space-y-2">
+                  {users.map((u) => {
+                    const expired = u.expiredAt ? new Date(u.expiredAt) < new Date() : false;
+                    const badge = expiryBadge(u.expiredAt ?? null);
+                    return (
+                      <div key={u.id} className={`flex items-center gap-3 rounded-xl border bg-slate-50 dark:bg-slate-800/50 px-3.5 py-2.5 ${expired ? "border-red-200 dark:border-red-900/50" : "border-slate-100 dark:border-slate-800"}`}>
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 select-none ${expired ? "bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400" : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
+                          {u.username[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                            <span className="text-sm font-mono font-semibold text-slate-800 dark:text-slate-100">{u.username}</span>
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${u.role === "admin" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"}`}>
+                              {u.role === "admin" ? "👑 Admin" : "👤 User"}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${u.isLogin ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${u.isLogin ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                              {u.isLogin ? "Đang online" : "Offline"}
+                            </span>
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${badge.cls}`}>
+                              ⏱ {badge.text}
+                            </span>
+                          </div>
+                          {u.currentIp && <p className="text-[11px] text-slate-400 font-mono">IP: {u.currentIp}</p>}
+                        </div>
+                        <button
+                          onClick={() => handleKick(u.id)}
+                          disabled={!u.isLogin || kicking === u.id}
+                          title={u.isLogin ? "Kick — buộc đăng xuất" : "Tài khoản đang offline"}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-30 disabled:cursor-not-allowed transition whitespace-nowrap"
+                        >
+                          {kicking === u.id ? "..." : "⚡ Kick"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* ── Tab: Requests ── */}
+        {activeTab === "requests" && (
+          <div className="overflow-y-auto flex-1 px-5 py-4 space-y-2">
+            {requests.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-8">Chưa có yêu cầu nào.</p>
+            ) : (
+              [...requests.filter((r) => r.status === "pending"), ...requests.filter((r) => r.status !== "pending")].map((req) => (
+                <div key={req.id} className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 overflow-hidden">
+                  <div className="flex items-start gap-3 px-3.5 py-2.5">
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{req.name}</span>
+                        {req.status === "pending" && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Chờ duyệt</span>}
+                        {req.status === "approved" && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">Đã duyệt</span>}
+                        {req.status === "declined" && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400">Từ chối</span>}
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-[11px] text-slate-400">
+                        <span>📍 {req.ipAddress}</span>
+                        {req.location && <span>{req.location}</span>}
+                        <span>⏱ {DURATION_LABEL_SM[req.duration] ?? req.duration}</span>
+                        <span>{new Date(req.createdAt).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+                      {req.status === "approved" && req.genUsername && (
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">✓ {req.genUsername}</p>
+                      )}
+                      {req.status === "declined" && req.declineReason && (
+                        <p className="text-[11px] text-red-400 italic">✕ {req.declineReason}</p>
+                      )}
+                    </div>
+                    {/* Actions */}
+                    {req.status === "pending" && (
+                      <div className="flex gap-1.5 shrink-0">
+                        <button
+                          onClick={() => handleApprove(req.id)}
+                          disabled={approving === req.id}
+                          className="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-500 disabled:opacity-50 transition"
+                        >
+                          {approving === req.id ? "..." : "✓ Duyệt"}
+                        </button>
+                        <button
+                          onClick={() => setDeclineExpandedId(declineExpandedId === req.id ? null : req.id)}
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 text-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition"
+                        >
+                          ✕ Từ chối
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Inline decline reason picker */}
+                  {declineExpandedId === req.id && (
+                    <div className="border-t border-slate-100 dark:border-slate-700 px-3.5 py-3 space-y-1.5 bg-white dark:bg-slate-900">
+                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Chọn lý do từ chối</p>
+                      {DECLINE_REASONS_SM.map((reason) => (
+                        <button
+                          key={reason}
+                          onClick={() => handleDecline(req.id, reason)}
+                          disabled={declining}
+                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-50 transition"
+                        >
+                          {reason}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -848,7 +1004,6 @@ function UserManagementModal({ onClose }: { onClose: () => void }) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function SoftwareManager({ software, categories }: { software: Software[]; categories: string[] }) {
-  const { theme, toggle } = useTheme();
   const { user, logout } = useAuth();
   const [showUserMgmt, setShowUserMgmt] = useState(false);
   const [query, setQuery] = useState("");
@@ -1120,13 +1275,6 @@ export default function SoftwareManager({ software, categories }: { software: So
                   </div>
                 )}
 
-                <button
-                  onClick={toggle}
-                  title={theme === "dark" ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
-                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 dark:bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-700 dark:hover:bg-slate-800 transition-all"
-                >
-                  {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-                </button>
               </div>
             </div>
 

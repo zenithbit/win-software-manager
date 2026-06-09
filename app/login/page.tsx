@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "@/app/components/ThemeProvider";
 import { useAuth } from "@/app/components/AuthProvider";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -17,22 +16,6 @@ function EyeIcon({ open }: { open: boolean }) {
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
       <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
       <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-}
-
-function SunIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
   );
 }
@@ -320,7 +303,6 @@ function AccountRequestModal({
 // ─── Login Page ───────────────────────────────────────────────────────────────
 
 export default function LoginPage() {
-  const { theme, toggle } = useTheme();
   const { login } = useAuth();
   const router = useRouter();
 
@@ -356,18 +338,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 dark:bg-black flex flex-col items-center justify-center p-4 transition-colors duration-200">
-      {/* Dark mode toggle */}
-      <div className="fixed top-4 right-4">
-        <button
-          onClick={toggle}
-          title={theme === "dark" ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 dark:bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-700 dark:hover:bg-slate-800 transition-all"
-        >
-          {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-        </button>
-      </div>
-
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
       {/* Card */}
       <div className="w-full max-w-sm">
         {/* Logo + Title */}

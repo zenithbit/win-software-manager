@@ -9,6 +9,7 @@ export interface Software {
   icon: string;
   tags?: string[];
   wingetId?: string;
+  note?: string;
 }
 
 export const DEFAULT_CATEGORIES: string[] = ["System", "Office", "Browsers", "Dev Tools", "Media", "Utilities"];

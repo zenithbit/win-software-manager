@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { type Software } from "@/app/data/software";
-import { useTheme } from "@/app/components/ThemeProvider";
 import type { LinkCheckReport, LinkCheckResult } from "@/lib/linkChecker";
 import type { Suggestion } from "@/lib/suggestionsDb";
 import type { ChangelogEntry } from "@/lib/changelogDb";
@@ -34,28 +33,12 @@ const EMPTY_FORM = {
   downloadUrl: "",
   tags: "",
   wingetId: "",
+  note: "",
 };
 
 type FormData = typeof EMPTY_FORM;
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-
-function SunIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
-}
 
 function HistoryIcon() {
   return (
@@ -188,6 +171,20 @@ function SoftwareForm({
           onChange={set("wingetId")}
           placeholder="VD: Microsoft.VisualStudioCode"
           className={`${inputClass} font-mono text-xs`}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>
+          Ghi chú{" "}
+          <span className="text-slate-400 dark:text-slate-500 normal-case font-normal">(serial, crack key, hướng dẫn — hiển thị cho người dùng)</span>
+        </label>
+        <textarea
+          value={form.note}
+          onChange={set("note")}
+          placeholder="VD: Serial: XXXX-XXXX-XXXX&#10;Mật khẩu giải nén: abc123"
+          rows={3}
+          className={`${inputClass} resize-none`}
         />
       </div>
 
@@ -967,6 +964,7 @@ function softwareToForm(s: Software): FormData {
     downloadUrl: s.downloadUrl,
     tags: s.tags?.join(", ") ?? "",
     wingetId: s.wingetId ?? "",
+    note: s.note ?? "",
   };
 }
 
@@ -979,11 +977,11 @@ function formToPayload(f: FormData): Omit<Software, "id"> {
     downloadUrl: f.downloadUrl.trim(),
     tags: f.tags.split(",").map((t) => t.trim()).filter(Boolean),
     wingetId: f.wingetId.trim() || undefined,
+    note: f.note.trim() || undefined,
   };
 }
 
 export default function AdminDashboard() {
-  const { theme, toggle } = useTheme();
   const [items, setItems] = useState<Software[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1007,6 +1005,7 @@ export default function AdminDashboard() {
   const [downloadLogs, setDownloadLogs] = useState<DownloadLogEntry[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
   const [accountRequests, setAccountRequests] = useState<AccountRequest[]>([]);
+  const [activeTab, setActiveTab] = useState<"software" | "categories" | "accounts" | "suggestions" | "logs">("software");
 
   useEffect(() => {
     if (!toast) return;
@@ -1386,377 +1385,423 @@ export default function AdminDashboard() {
                   </span>
                 )}
               </button>
-              <button
-                onClick={toggle}
-                title={theme === "dark" ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
-                className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 dark:bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-700 dark:hover:bg-slate-800 transition-all"
-              >
-                {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-              </button>
             </div>
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
-          {/* Stats bar */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-slate-500 dark:text-slate-400 font-medium mr-1">
-              Tổng: <span className="text-slate-900 dark:text-slate-100 font-bold">{items.length}</span> phần mềm
-            </span>
-            {categories.map((c) => {
-              const count = stats[c] ?? 0;
-              if (count === 0 && catFilter !== c) return null;
-              return (
+        {/* Tab Navigation */}
+        <div className="bg-slate-900 dark:bg-black border-b border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex overflow-x-auto">
+              {([
+                { id: "software" as const, label: "Phần mềm", icon: "📦", badge: 0 },
+                { id: "categories" as const, label: "Danh mục", icon: "🗂️", badge: 0 },
+                { id: "accounts" as const, label: "Tài khoản", icon: "👥", badge: accountRequests.filter((r) => r.status === "pending").length },
+                { id: "suggestions" as const, label: "Đề xuất", icon: "💡", badge: suggestions.length },
+                { id: "logs" as const, label: "Nhật ký tải", icon: "📥", badge: 0 },
+              ]).map((tab) => (
                 <button
-                  key={c}
-                  onClick={() => setCatFilter(catFilter === c ? "All" : c)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition ${
-                    catFilter === c
-                      ? getCatBadgeColor(c) + " border-transparent ring-2 ring-offset-1 ring-current"
-                      : getCatBadgeColor(c) + " border-transparent hover:ring-1 hover:ring-current"
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative flex items-center gap-2 px-4 py-3.5 text-sm font-medium border-b-2 transition whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? "border-amber-400 text-white"
+                      : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600"
                   }`}
                 >
-                  {c}
-                  <span className="font-bold">{count}</span>
+                  <span>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                  {tab.badge > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-slate-900 text-[10px] font-bold leading-none">
+                      {tab.badge}
+                    </span>
+                  )}
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
+        </div>
 
-          {/* Link Checker */}
-          <LinkCheckerPanel report={linkReport} checking={linkChecking} onCheck={handleLinkCheck} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
 
-          {/* Category Manager */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3">
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2.5">
-              Danh mục <span className="text-slate-400 font-normal">({categories.length})</span>
-            </p>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {categories.map((cat) => {
-                const inUse = items.some((s) => s.category === cat);
+          {/* Software Tab */}
+          {activeTab === "software" && (<>
+            {/* Stats bar */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-slate-500 dark:text-slate-400 font-medium mr-1">
+                Tổng: <span className="text-slate-900 dark:text-slate-100 font-bold">{items.length}</span> phần mềm
+              </span>
+              {categories.map((c) => {
+                const count = stats[c] ?? 0;
+                if (count === 0 && catFilter !== c) return null;
                 return (
-                  <span key={cat} className={`inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full text-xs font-medium ${getCatBadgeColor(cat)}`}>
-                    {cat}
-                    <button
-                      onClick={() => handleDeleteCategory(cat)}
-                      disabled={inUse}
-                      title={inUse ? "Đang được sử dụng, không thể xóa" : `Xóa "${cat}"`}
-                      className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      ✕
-                    </button>
-                  </span>
+                  <button
+                    key={c}
+                    onClick={() => setCatFilter(catFilter === c ? "All" : c)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition ${
+                      catFilter === c
+                        ? getCatBadgeColor(c) + " border-transparent ring-2 ring-offset-1 ring-current"
+                        : getCatBadgeColor(c) + " border-transparent hover:ring-1 hover:ring-current"
+                    }`}
+                  >
+                    {c}
+                    <span className="font-bold">{count}</span>
+                  </button>
                 );
               })}
             </div>
-            <form onSubmit={handleAddCategory} className="flex gap-2">
-              <input
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                placeholder="Tên danh mục mới..."
-                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 transition"
-              />
-              <button
-                type="submit"
-                disabled={catSaving || !newCatName.trim()}
-                className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-600 text-white text-sm font-semibold hover:bg-slate-700 dark:hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition whitespace-nowrap"
-              >
-                {catSaving ? "..." : "+ Thêm"}
-              </button>
-            </form>
-          </div>
 
-          {/* Suggestions Panel */}
-          {suggestions.length > 0 && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-900/20 px-4 py-3">
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-2.5 flex items-center gap-2">
-                <span>💡</span>
-                Đề xuất từ cộng đồng
-                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-amber-400 text-slate-900 text-[11px] font-bold">{suggestions.length}</span>
-              </p>
-              <ul className="space-y-2">
-                {suggestions.map((s) => (
-                  <li key={s.id} className="flex items-start gap-3 rounded-xl bg-white dark:bg-slate-800 border border-amber-100 dark:border-slate-700 px-3 py-2.5">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{s.name}</span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                          {new Date(s.submittedAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      {s.downloadUrl && (
-                        <a href={s.downloadUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition truncate block max-w-sm mt-0.5">
-                          {s.downloadUrl}
-                        </a>
-                      )}
-                      {s.note && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 italic">&ldquo;{s.note}&rdquo;</p>}
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button
-                        onClick={() => handleApproveSuggestion(s)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-600 text-white text-xs font-semibold hover:bg-slate-700 dark:hover:bg-slate-500 transition whitespace-nowrap"
-                      >
-                        + Tạo phần mềm
-                      </button>
-                      <button
-                        onClick={() => handleRejectSuggestion(s.id)}
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 text-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition"
-                      >
-                        Bỏ qua
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Account Requests */}
-          <AccountRequestsPanel
-            requests={accountRequests}
-            onApprove={handleApproveRequest}
-            onDecline={handleDeclineRequest}
-            onRefresh={fetchAccountRequests}
-          />
-
-          {/* User Management */}
-          <UserManagementPanel
-            users={users}
-            creating={userCreating}
-            onCreateUser={handleCreateUser}
-            onDeleteUser={handleDeleteUser}
-            onToggleRole={handleToggleRole}
-            onSetQuota={handleSetQuota}
-            onResetDownloads={handleResetDownloads}
-          />
-
-          {/* Download Log */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                <span>📥</span>
-                Nhật ký tải về
-                {downloadLogs.length > 0 && (
-                  <span className="text-slate-400 font-normal">({downloadLogs.length})</span>
-                )}
-              </p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[640px]">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-left">
-                    <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-10">#</th>
-                    <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Người dùng</th>
-                    <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Phần mềm</th>
-                    <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Thời gian</th>
-                    <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">IP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logsLoading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <tr key={i} className="border-b border-slate-100 dark:border-slate-700">
-                        {[60, 120, 160, 140, 100].map((w, j) => (
-                          <td key={j} className="px-4 py-3">
-                            <div className="h-3.5 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" style={{ width: w }} />
-                          </td>
-                        ))}
-                      </tr>
-                    ))
-                  ) : downloadLogs.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
-                        <div className="text-3xl mb-2">📭</div>
-                        Chưa có lượt tải nào được ghi lại
-                      </td>
-                    </tr>
-                  ) : (
-                    downloadLogs.map((log, i) => {
-                      const dt = new Date(log.downloadedAt);
-                      const date = dt.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
-                      const time = dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-                      return (
-                        <tr key={log.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                          <td className="px-4 py-2.5 text-xs text-slate-400 dark:text-slate-500">{i + 1}</td>
-                          <td className="px-4 py-2.5">
-                            <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">
-                              <span className="w-4 h-4 rounded-full bg-slate-300 dark:bg-slate-500 flex items-center justify-center text-[9px] font-bold text-slate-700 dark:text-slate-200 flex-shrink-0">
-                                {log.username[0].toUpperCase()}
-                              </span>
-                              {log.username}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{log.softwareName}</span>
-                          </td>
-                          <td className="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                            {date} <span className="text-slate-400 dark:text-slate-500">{time}</span>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            {log.ipAddress ? (
-                              <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{log.ipAddress}</span>
-                            ) : (
-                              <span className="text-xs text-slate-300 dark:text-slate-600">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-            <div className="relative flex-1 max-w-sm">
-              <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none text-sm">🔍</span>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm kiếm phần mềm..."
-                className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 transition"
-              />
-              {search && (
-                <button onClick={() => setSearch("")} className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-                  ✕
-                </button>
-              )}
-            </div>
-            <button
-              onClick={() => setModal("new")}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white text-sm font-semibold hover:bg-slate-700 dark:hover:bg-slate-600 transition whitespace-nowrap"
-            >
-              <span className="text-base leading-none">＋</span>
-              Thêm phần mềm
-            </button>
-          </div>
-
-          {/* Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            {filtered.length > 0 && !loading && (
-              <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400">
-                Hiển thị <span className="font-semibold text-slate-700 dark:text-slate-300">{filtered.length}</span> / {items.length} phần mềm
-                {catFilter !== "All" && (
-                  <button onClick={() => setCatFilter("All")} className="ml-2 underline underline-offset-2 hover:text-slate-900 dark:hover:text-slate-100">
-                    Bỏ lọc danh mục
+            {/* Toolbar */}
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+              <div className="relative flex-1 max-w-sm">
+                <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none text-sm">🔍</span>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm kiếm phần mềm..."
+                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 transition"
+                />
+                {search && (
+                  <button onClick={() => setSearch("")} className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+                    ✕
                   </button>
                 )}
               </div>
-            )}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[780px]">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-left">
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-10">#</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-12">Icon</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Tên phần mềm</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Danh mục</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Mô tả</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Link tải</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide text-right">Lượt tải</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                {loading ? (
-                  <TableSkeleton />
-                ) : filtered.length === 0 ? (
-                  <tbody>
-                    <tr>
-                      <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500 text-sm">
-                        <div className="text-4xl mb-2">🔍</div>
-                        {search ? `Không tìm thấy "${search}"` : "Chưa có phần mềm nào"}
-                      </td>
+              <button
+                onClick={() => setModal("new")}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white text-sm font-semibold hover:bg-slate-700 dark:hover:bg-slate-600 transition whitespace-nowrap"
+              >
+                <span className="text-base leading-none">＋</span>
+                Thêm phần mềm
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+              {filtered.length > 0 && !loading && (
+                <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400">
+                  Hiển thị <span className="font-semibold text-slate-700 dark:text-slate-300">{filtered.length}</span> / {items.length} phần mềm
+                  {catFilter !== "All" && (
+                    <button onClick={() => setCatFilter("All")} className="ml-2 underline underline-offset-2 hover:text-slate-900 dark:hover:text-slate-100">
+                      Bỏ lọc danh mục
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[780px]">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-left">
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-10">#</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-12">Icon</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Tên phần mềm</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Danh mục</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Mô tả</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Link tải</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide text-right">Lượt tải</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide text-right">Thao tác</th>
                     </tr>
-                  </tbody>
-                ) : (
-                  <tbody>
-                    {filtered.map((s, i) => (
-                      <tr key={s.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
-                        <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">{i + 1}</td>
-                        <td className="px-4 py-3">
-                          <img src={s.icon} alt="" className="w-8 h-8 object-contain rounded" onError={(e) => { e.currentTarget.style.opacity = "0.2"; }} />
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-slate-900 dark:text-slate-100">{s.name}</span>
-                            {s.wingetId ? (
-                              <span className="text-[10px] font-mono bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded hidden xl:inline dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-700" title={`winget install --id ${s.wingetId}`}>
-                                {s.wingetId}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded hidden xl:inline dark:bg-slate-700 dark:text-slate-500">no winget</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getCatBadgeColor(s.category)}`}>
-                            {s.category}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400 max-w-xs">
-                          <span title={s.description} className="line-clamp-1">{s.description}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
-                            {linkReport && (() => {
-                              const r = linkReport.results.find((lr) => lr.id === s.id);
-                              if (!r) return null;
-                              const color =
-                                r.status === "ok" ? "bg-emerald-400" :
-                                r.status === "broken" ? "bg-red-500" : "bg-amber-400";
-                              const label =
-                                r.status === "ok" ? "Link hoạt động" :
-                                r.status === "broken" ? `Lỗi ${r.statusCode ?? ""}` : "Không thể kết nối";
-                              return <span title={label} className={`w-2 h-2 rounded-full flex-shrink-0 ${color}`} />;
-                            })()}
-                            <a
-                              href={s.downloadUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={s.downloadUrl}
-                              className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition flex items-center gap-1 text-xs max-w-[180px]"
-                            >
-                              <span className="truncate">{s.downloadUrl.replace(/^https?:\/\//, "")}</span>
-                              <span className="flex-shrink-0">↗</span>
-                            </a>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {(() => {
-                            const c = analytics[s.id] ?? 0;
-                            return c > 0
-                              ? <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{c.toLocaleString("vi-VN")}</span>
-                              : <span className="text-xs text-slate-300 dark:text-slate-600">—</span>;
-                          })()}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => setModal(s)}
-                              title="Chỉnh sửa"
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:text-slate-100 dark:hover:bg-slate-600 transition"
-                            >
-                              <EditIcon />
-                            </button>
-                            <button
-                              onClick={() => setConfirmDelete(s)}
-                              title="Xóa"
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
-                            >
-                              <TrashIcon />
-                            </button>
-                          </div>
+                  </thead>
+                  {loading ? (
+                    <TableSkeleton />
+                  ) : filtered.length === 0 ? (
+                    <tbody>
+                      <tr>
+                        <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500 text-sm">
+                          <div className="text-4xl mb-2">🔍</div>
+                          {search ? `Không tìm thấy "${search}"` : "Chưa có phần mềm nào"}
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                )}
-              </table>
+                    </tbody>
+                  ) : (
+                    <tbody>
+                      {filtered.map((s, i) => (
+                        <tr key={s.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
+                          <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">{i + 1}</td>
+                          <td className="px-4 py-3">
+                            <img src={s.icon} alt="" className="w-8 h-8 object-contain rounded" onError={(e) => { e.currentTarget.style.opacity = "0.2"; }} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-slate-900 dark:text-slate-100">{s.name}</span>
+                              {s.wingetId ? (
+                                <span className="text-[10px] font-mono bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded hidden xl:inline dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-700" title={`winget install --id ${s.wingetId}`}>
+                                  {s.wingetId}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded hidden xl:inline dark:bg-slate-700 dark:text-slate-500">no winget</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getCatBadgeColor(s.category)}`}>
+                              {s.category}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400 max-w-xs">
+                            <span title={s.description} className="line-clamp-1">{s.description}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5">
+                              {linkReport && (() => {
+                                const r = linkReport.results.find((lr) => lr.id === s.id);
+                                if (!r) return null;
+                                const color =
+                                  r.status === "ok" ? "bg-emerald-400" :
+                                  r.status === "broken" ? "bg-red-500" : "bg-amber-400";
+                                const label =
+                                  r.status === "ok" ? "Link hoạt động" :
+                                  r.status === "broken" ? `Lỗi ${r.statusCode ?? ""}` : "Không thể kết nối";
+                                return <span title={label} className={`w-2 h-2 rounded-full flex-shrink-0 ${color}`} />;
+                              })()}
+                              <a
+                                href={s.downloadUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={s.downloadUrl}
+                                className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition flex items-center gap-1 text-xs max-w-[180px]"
+                              >
+                                <span className="truncate">{s.downloadUrl.replace(/^https?:\/\//, "")}</span>
+                                <span className="flex-shrink-0">↗</span>
+                              </a>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {(() => {
+                              const c = analytics[s.id] ?? 0;
+                              return c > 0
+                                ? <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{c.toLocaleString("vi-VN")}</span>
+                                : <span className="text-xs text-slate-300 dark:text-slate-600">—</span>;
+                            })()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => setModal(s)}
+                                title="Chỉnh sửa"
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:text-slate-100 dark:hover:bg-slate-600 transition"
+                              >
+                                <EditIcon />
+                              </button>
+                              <button
+                                onClick={() => setConfirmDelete(s)}
+                                title="Xóa"
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition"
+                              >
+                                <TrashIcon />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  )}
+                </table>
+              </div>
             </div>
-          </div>
+          </>)}
+
+          {/* Categories Tab */}
+          {activeTab === "categories" && (<>
+            {/* Link Checker */}
+            <LinkCheckerPanel report={linkReport} checking={linkChecking} onCheck={handleLinkCheck} />
+
+            {/* Category Manager */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2.5">
+                Danh mục <span className="text-slate-400 font-normal">({categories.length})</span>
+              </p>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {categories.map((cat) => {
+                  const inUse = items.some((s) => s.category === cat);
+                  return (
+                    <span key={cat} className={`inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full text-xs font-medium ${getCatBadgeColor(cat)}`}>
+                      {cat}
+                      <button
+                        onClick={() => handleDeleteCategory(cat)}
+                        disabled={inUse}
+                        title={inUse ? "Đang được sử dụng, không thể xóa" : `Xóa "${cat}"`}
+                        className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+              <form onSubmit={handleAddCategory} className="flex gap-2">
+                <input
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="Tên danh mục mới..."
+                  className="flex-1 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 transition"
+                />
+                <button
+                  type="submit"
+                  disabled={catSaving || !newCatName.trim()}
+                  className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-600 text-white text-sm font-semibold hover:bg-slate-700 dark:hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition whitespace-nowrap"
+                >
+                  {catSaving ? "..." : "+ Thêm"}
+                </button>
+              </form>
+            </div>
+          </>)}
+
+          {/* Accounts Tab */}
+          {activeTab === "accounts" && (<>
+            {/* Account Requests */}
+            <AccountRequestsPanel
+              requests={accountRequests}
+              onApprove={handleApproveRequest}
+              onDecline={handleDeclineRequest}
+              onRefresh={fetchAccountRequests}
+            />
+
+            {/* User Management */}
+            <UserManagementPanel
+              users={users}
+              creating={userCreating}
+              onCreateUser={handleCreateUser}
+              onDeleteUser={handleDeleteUser}
+              onToggleRole={handleToggleRole}
+              onSetQuota={handleSetQuota}
+              onResetDownloads={handleResetDownloads}
+            />
+          </>)}
+
+          {/* Suggestions Tab */}
+          {activeTab === "suggestions" && (<>
+            {suggestions.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-16 text-center">
+                <div className="text-4xl mb-2">💡</div>
+                <p className="text-sm text-slate-400 dark:text-slate-500">Chưa có đề xuất nào từ cộng đồng</p>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-900/20 px-4 py-3">
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-2.5 flex items-center gap-2">
+                  <span>💡</span>
+                  Đề xuất từ cộng đồng
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-amber-400 text-slate-900 text-[11px] font-bold">{suggestions.length}</span>
+                </p>
+                <ul className="space-y-2">
+                  {suggestions.map((s) => (
+                    <li key={s.id} className="flex items-start gap-3 rounded-xl bg-white dark:bg-slate-800 border border-amber-100 dark:border-slate-700 px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{s.name}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                            {new Date(s.submittedAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                        {s.downloadUrl && (
+                          <a href={s.downloadUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition truncate block max-w-sm mt-0.5">
+                            {s.downloadUrl}
+                          </a>
+                        )}
+                        {s.note && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 italic">&ldquo;{s.note}&rdquo;</p>}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => handleApproveSuggestion(s)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-600 text-white text-xs font-semibold hover:bg-slate-700 dark:hover:bg-slate-500 transition whitespace-nowrap"
+                        >
+                          + Tạo phần mềm
+                        </button>
+                        <button
+                          onClick={() => handleRejectSuggestion(s.id)}
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 text-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition"
+                        >
+                          Bỏ qua
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>)}
+
+          {/* Logs Tab */}
+          {activeTab === "logs" && (<>
+            {/* Download Log */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                  <span>📥</span>
+                  Nhật ký tải về
+                  {downloadLogs.length > 0 && (
+                    <span className="text-slate-400 font-normal">({downloadLogs.length})</span>
+                  )}
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[640px]">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-left">
+                      <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-10">#</th>
+                      <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Người dùng</th>
+                      <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Phần mềm</th>
+                      <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Thời gian</th>
+                      <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">IP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logsLoading ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <tr key={i} className="border-b border-slate-100 dark:border-slate-700">
+                          {[60, 120, 160, 140, 100].map((w, j) => (
+                            <td key={j} className="px-4 py-3">
+                              <div className="h-3.5 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" style={{ width: w }} />
+                            </td>
+                          ))}
+                        </tr>
+                      ))
+                    ) : downloadLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+                          <div className="text-3xl mb-2">📭</div>
+                          Chưa có lượt tải nào được ghi lại
+                        </td>
+                      </tr>
+                    ) : (
+                      downloadLogs.map((log, i) => {
+                        const dt = new Date(log.downloadedAt);
+                        const date = dt.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+                        const time = dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                        return (
+                          <tr key={log.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <td className="px-4 py-2.5 text-xs text-slate-400 dark:text-slate-500">{i + 1}</td>
+                            <td className="px-4 py-2.5">
+                              <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">
+                                <span className="w-4 h-4 rounded-full bg-slate-300 dark:bg-slate-500 flex items-center justify-center text-[9px] font-bold text-slate-700 dark:text-slate-200 flex-shrink-0">
+                                  {log.username[0].toUpperCase()}
+                                </span>
+                                {log.username}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{log.softwareName}</span>
+                            </td>
+                            <td className="px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                              {date} <span className="text-slate-400 dark:text-slate-500">{time}</span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              {log.ipAddress ? (
+                                <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{log.ipAddress}</span>
+                              ) : (
+                                <span className="text-xs text-slate-300 dark:text-slate-600">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>)}
 
           <p className="text-xs text-slate-400 dark:text-slate-500 text-center pb-4">
             Dữ liệu được lưu trong <code className="bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded">data/software-db.json</code>
